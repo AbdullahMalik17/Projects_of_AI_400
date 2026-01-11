@@ -1,0 +1,70 @@
+[project]
+name = "ai-task-manager-backend"
+version = "1.0.0"
+description = "AI-powered task management system backend with FastAPI and SQLModel"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # FastAPI and ASGI Server
+    "fastapi==0.109.0",
+    "uvicorn[standard]==0.27.0",
+    "pydantic==2.5.3",
+    "pydantic-settings==2.1.0",
+
+    # Database
+    "sqlmodel==0.0.14",
+    "alembic==1.13.1",
+    "psycopg2-binary==2.9.9",
+
+    # AI/LLM Integration
+    "google-generativeai==0.3.2",
+    "openai==1.10.0",
+
+    # Authentication & Security
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "python-multipart==0.0.6",
+
+    # Utilities
+    "python-dotenv==1.0.0",
+    "httpx==0.26.0",
+    "tenacity==8.2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.4",
+    "pytest-asyncio==0.23.3",
+    "black==23.12.1",
+    "flake8==7.0.0",
+    "mypy==1.8.0",
+    "ruff==0.1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
