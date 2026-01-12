@@ -2,6 +2,9 @@
 
 An intelligent task management application leveraging artificial intelligence to enhance productivity through natural language processing, smart scheduling, and context-aware assistance.
 
+## 🎥 Project Demo
+[Watch the Project Demo Video](./Project_Demo.mp4)
+
 ![License](https://img.shields.io/badge/license-Proprietary-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green.svg)
