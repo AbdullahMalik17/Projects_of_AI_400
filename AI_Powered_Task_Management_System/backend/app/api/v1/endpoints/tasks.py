@@ -66,13 +66,13 @@ async def create_task(
 
 @router.get("", response_model=APIResponse[TaskListResponse])
 async def list_tasks(
+    service: TaskServiceDep,
+    session: SessionDep,
     status_filter: Optional[TaskStatus] = Query(None, alias="status", description="Filter by status"),
     priority_filter: Optional[Priority] = Query(None, alias="priority", description="Filter by priority"),
     skip: int = Query(0, ge=0, description="Number of tasks to skip"),
     limit: int = Query(50, ge=1, le=100, description="Maximum tasks to return"),
-    include_subtasks: bool = Query(True, description="Include subtasks in results"),
-    service: TaskServiceDep,
-    session: SessionDep
+    include_subtasks: bool = Query(True, description="Include subtasks in results")
 ):
     """
     List tasks with filtering, pagination, and statistics.
@@ -160,8 +160,8 @@ async def update_task(
 @router.delete("/{task_id}", response_model=APIResponse[dict])
 async def delete_task(
     task_id: int,
-    cascade_subtasks: bool = Query(False, description="Delete subtasks as well"),
-    service: TaskServiceDep
+    service: TaskServiceDep,
+    cascade_subtasks: bool = Query(False, description="Delete subtasks as well")
 ):
     """
     Delete a task with optional cascade to subtasks.
@@ -181,8 +181,8 @@ async def delete_task(
 @router.post("/{task_id}/complete", response_model=APIResponse[TaskResponse])
 async def complete_task(
     task_id: int,
-    actual_duration: Optional[int] = Query(None, description="Actual time spent in minutes"),
-    service: TaskServiceDep
+    service: TaskServiceDep,
+    actual_duration: Optional[int] = Query(None, description="Actual time spent in minutes")
 ):
     """
     Mark a task as completed with optional actual duration.
@@ -242,10 +242,10 @@ async def create_task_from_natural_language(
 
 @router.get("/search", response_model=APIResponse[List[TaskResponse]])
 async def search_tasks(
+    service: TaskServiceDep,
     q: str = Query(..., min_length=2, description="Search query"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
-    service: TaskServiceDep
+    limit: int = Query(50, ge=1, le=100)
 ):
     """
     Search tasks by text query.
@@ -268,9 +268,9 @@ async def search_tasks(
 
 @router.get("/overdue", response_model=APIResponse[List[TaskResponse]])
 async def get_overdue_tasks(
+    service: TaskServiceDep,
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    service: TaskServiceDep
+    limit: int = Query(100, ge=1, le=100)
 ):
     """
     Get all overdue tasks.
@@ -288,10 +288,10 @@ async def get_overdue_tasks(
 
 @router.get("/upcoming", response_model=APIResponse[List[TaskResponse]])
 async def get_upcoming_tasks(
+    service: TaskServiceDep,
     days: int = Query(7, ge=1, le=30, description="Days to look ahead"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    service: TaskServiceDep
+    limit: int = Query(100, ge=1, le=100)
 ):
     """
     Get tasks due within specified number of days.

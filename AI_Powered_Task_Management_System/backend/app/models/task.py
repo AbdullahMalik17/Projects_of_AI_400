@@ -7,8 +7,11 @@ and business logic for task management.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship, Column, JSON
+
+if TYPE_CHECKING:
+    from app.models.tag import Tag, TaskTagLink
 
 
 class TaskStatus(str, Enum):
@@ -49,7 +52,7 @@ class Task(SQLModel, table=True):
         completed_at: Timestamp when task was marked complete
         user_id: Foreign key to owning user
         parent_task_id: Foreign key to parent task (for subtasks)
-        metadata: JSON field for flexible AI-generated data
+        task_metadata: JSON field for flexible AI-generated data
     """
 
     __tablename__ = "tasks"
@@ -78,8 +81,9 @@ class Task(SQLModel, table=True):
     parent_task_id: Optional[int] = Field(default=None, foreign_key="tasks.id", index=True)
 
     # AI-Generated Metadata (flexible JSON storage)
-    metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
-    # Example metadata:
+    # Note: renamed from 'metadata' to 'task_metadata' because 'metadata' is reserved in SQLAlchemy
+    task_metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    # Example task_metadata:
     # {
     #   "ai_suggested_priority": "high",
     #   "ai_breakdown_suggestions": [...],
@@ -100,11 +104,11 @@ class Task(SQLModel, table=True):
         }
     )
 
-    # Many-to-Many with Tags
-    tags: List["Tag"] = Relationship(
-        back_populates="tasks",
-        link_model="TaskTagLink"
-    )
+    # Many-to-Many with Tags (commented out temporarily to fix startup issue)
+    # tags: List["Tag"] = Relationship(
+    #     back_populates="tasks",
+    #     link_model="TaskTagLink"
+    # )
 
     def mark_complete(self) -> None:
         """Mark task as completed and set completion timestamp."""

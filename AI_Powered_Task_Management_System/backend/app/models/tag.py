@@ -49,11 +49,11 @@ class Tag(SQLModel, table=True):
     # Foreign Keys
     user_id: int = Field(foreign_key="users.id", index=True)
 
-    # Relationships
-    tasks: List["Task"] = Relationship(
-        back_populates="tags",
-        link_model=TaskTagLink
-    )
+    # Relationships (commented out temporarily to fix startup issue)
+    # tasks: List["Task"] = Relationship(
+    #     back_populates="tags",
+    #     link_model=TaskTagLink
+    # )
 
     class Config:
         """Pydantic model configuration."""
