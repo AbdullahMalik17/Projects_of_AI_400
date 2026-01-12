@@ -169,6 +169,52 @@ Return only the JSON array, nothing else."""
             print(f"Task breakdown failed: {e}. Using fallback.")
             return self._fallback_breakdown(task_title)
 
+    async def suggest_schedule(
+        self,
+        task: Task,
+        user_context: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """
+        Suggest the best time to schedule a task.
+
+        Args:
+            task: Task to schedule
+            user_context: User context (work hours, etc.)
+
+        Returns:
+            Dictionary with schedule suggestion
+        """
+        now = datetime.now()
+        prompt = f"""Suggest the best time to work on this task:
+
+Task: {task.title}
+Description: {task.description or 'None'}
+Priority: {task.priority.value}
+Due Date: {task.due_date if task.due_date else 'None'}
+Current Time: {now.isoformat()}
+User Context: {user_context or 'Standard 9-5 work hours'}
+
+Provide a JSON response with:
+- suggested_start_time: ISO format string
+- suggested_duration_minutes: number
+- reasoning: why this time was chosen
+- calendar_block_title: title for calendar event
+
+Focus on productivity principles (e.g., deep work in morning for hard tasks)."""
+
+        try:
+            response = await self.model.generate_content_async(prompt)
+            suggestion = json.loads(response.text)
+            return suggestion
+        except Exception as e:
+            print(f"Scheduling suggestion failed: {e}. Using fallback.")
+            return {
+                "suggested_start_time": (now + timedelta(days=1)).replace(hour=9, minute=0).isoformat(),
+                "suggested_duration_minutes": 60,
+                "reasoning": "Fallback to tomorrow morning",
+                "calendar_block_title": f"Work on {task.title}"
+            }
+
     def _fallback_analysis(self, task: Task) -> Dict[str, Any]:
         """Fallback analysis when AI fails."""
         # Simple rule-based analysis

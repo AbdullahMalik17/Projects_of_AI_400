@@ -69,7 +69,7 @@ class TaskResponse(TaskBase):
     created_at: datetime
     updated_at: datetime
     completed_at: Optional[datetime] = None
-    metadata: dict = Field(default_factory=dict)
+    task_metadata: dict = Field(default_factory=dict)
     tags: List["TagResponse"] = Field(default=[])
     subtasks: List["TaskResponse"] = Field(default=[])
 
@@ -89,11 +89,13 @@ class TaskListResponse(BaseModel):
 class NaturalLanguageTaskCreate(BaseModel):
     """Schema for creating tasks from natural language input."""
     message: str = Field(..., min_length=1, max_length=1000, description="Natural language task description")
+    context: Optional[dict] = Field(default=None, description="Optional user context for parsing")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "message": "Remind me to call John tomorrow at 2pm about the project proposal"
+                "message": "Remind me to call John tomorrow at 2pm about the project proposal",
+                "context": {"timezone": "America/New_York"}
             }
         }
 

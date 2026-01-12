@@ -83,6 +83,7 @@ class TaskParserAgent:
             - Work Hours: {user_context.get('work_hours', 'N/A')}
             - Preferred Priority: {user_context.get('default_priority', 'medium')}
             - Common Categories: {user_context.get('common_task_categories', [])}
+            - Recent Tasks: {user_context.get('recent_tasks', [])}
             """
 
         prompt = f"""

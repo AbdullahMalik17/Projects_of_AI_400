@@ -6,20 +6,7 @@ Defines Tag entity and TaskTagLink association table for many-to-many relationsh
 
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
-
-
-class TaskTagLink(SQLModel, table=True):
-    """
-    Association table linking tasks and tags (many-to-many).
-
-    This model represents the junction table for the many-to-many
-    relationship between tasks and tags.
-    """
-
-    __tablename__ = "task_tag_links"
-
-    task_id: int = Field(foreign_key="tasks.id", primary_key=True)
-    tag_id: int = Field(foreign_key="tags.id", primary_key=True)
+from app.models.links import TaskTagLink
 
 
 class Tag(SQLModel, table=True):
@@ -49,11 +36,11 @@ class Tag(SQLModel, table=True):
     # Foreign Keys
     user_id: int = Field(foreign_key="users.id", index=True)
 
-    # Relationships (commented out temporarily to fix startup issue)
-    # tasks: List["Task"] = Relationship(
-    #     back_populates="tags",
-    #     link_model=TaskTagLink
-    # )
+    # Relationships
+    tasks: List["Task"] = Relationship(
+        back_populates="tags",
+        link_model=TaskTagLink
+    )
 
     class Config:
         """Pydantic model configuration."""

@@ -8,8 +8,9 @@ creation, updates, scheduling, prioritization, and task intelligence.
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlmodel import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 
+from app.core.database import get_session
 from app.models.task import Task, TaskStatus, Priority
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.repositories.task_repository import TaskRepository
@@ -266,7 +267,7 @@ class TaskService:
                 task.estimated_duration,
                 actual_duration
             )
-            task.metadata["estimation_accuracy"] = accuracy
+            task.task_metadata["estimation_accuracy"] = accuracy
 
         return self.repository.update(task)
 
@@ -486,8 +487,8 @@ class TaskService:
             task.status = TaskStatus.TODO
 
         # Initialize metadata if not present
-        if not task.metadata:
-            task.metadata = {}
+        if not task.task_metadata:
+            task.task_metadata = {}
 
     def _handle_status_change(
         self,
@@ -533,7 +534,7 @@ class TaskService:
         return round(accuracy, 2)
 
 
-def get_task_service(session: Session) -> TaskService:
+def get_task_service(session: Session = Depends(get_session)) -> TaskService:
     """
     Factory function to create TaskService instance.
 

@@ -22,6 +22,7 @@ from app.schemas.response import APIResponse
 from app.services.task_service import TaskService, get_task_service
 from app.agents.task_parser import task_parser_agent
 from app.agents.task_intelligence_agent import task_intelligence_agent
+from app.agents.context_manager import get_context_manager
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -61,6 +62,56 @@ async def create_task(
         success=True,
         data=task,
         message="Task created successfully"
+    )
+
+
+@router.post("/nl-create", response_model=APIResponse[TaskResponse], status_code=status.HTTP_201_CREATED)
+async def create_task_from_natural_language(
+    nl_input: NaturalLanguageTaskCreate,
+    service: TaskServiceDep
+):
+    """
+    Create a task from natural language input using AI.
+
+    Uses Gemini AI to parse natural language and extract structured task information
+    including title, description, due date, priority, and tags.
+
+    **Example Request:**
+    ```json
+    {
+        "message": "Remind me to call John tomorrow at 2pm about the project budget",
+        "context": {"timezone": "America/New_York"}
+    }
+    ```
+
+    The AI will extract:
+    - Title: "Call John about the project budget"
+    - Due Date: Tomorrow at 2:00 PM
+    - Priority: Based on urgency keywords
+    - Tags: ["communication", "project", "budget"]
+    """
+    # Fetch recent tasks for context
+    context_manager = get_context_manager(service.session, DEFAULT_USER_ID)
+    recent_tasks = service.list_tasks(user_id=DEFAULT_USER_ID, limit=5)
+    task_context = context_manager.get_task_context(recent_tasks)
+
+    # Merge with provided context
+    full_context = nl_input.context or {}
+    full_context.update(task_context)
+
+    # Parse natural language using AI agent
+    parsed_task = await task_parser_agent.parse_natural_language_task(
+        nl_input.message,
+        user_context=full_context
+    )
+
+    # Create task using service
+    task = service.create_task(parsed_task, user_id=DEFAULT_USER_ID)
+
+    return APIResponse(
+        success=True,
+        data=task,
+        message="Task created successfully from natural language"
     )
 
 
@@ -108,135 +159,6 @@ async def list_tasks(
             page_size=limit,
             has_more=(skip + limit) < total
         )
-    )
-
-
-@router.get("/{task_id}", response_model=APIResponse[TaskResponse])
-async def get_task(
-    task_id: int,
-    service: TaskServiceDep
-):
-    """
-    Get a specific task by ID with all relationships loaded.
-
-    Returns detailed information about a single task including subtasks and tags.
-    """
-    task = service.get_task(task_id, user_id=DEFAULT_USER_ID, load_relationships=True)
-
-    return APIResponse(
-        success=True,
-        data=task
-    )
-
-
-@router.put("/{task_id}", response_model=APIResponse[TaskResponse])
-async def update_task(
-    task_id: int,
-    task_update: TaskUpdate,
-    service: TaskServiceDep
-):
-    """
-    Update an existing task with validation.
-
-    Updates only the provided fields, maintaining existing values for others.
-
-    **Example Request:**
-    ```json
-    {
-        "status": "in_progress",
-        "priority": "high"
-    }
-    ```
-    """
-    task = service.update_task(task_id, task_update, user_id=DEFAULT_USER_ID)
-
-    return APIResponse(
-        success=True,
-        data=task,
-        message="Task updated successfully"
-    )
-
-
-@router.delete("/{task_id}", response_model=APIResponse[dict])
-async def delete_task(
-    task_id: int,
-    service: TaskServiceDep,
-    cascade_subtasks: bool = Query(False, description="Delete subtasks as well")
-):
-    """
-    Delete a task with optional cascade to subtasks.
-
-    **Query Parameters:**
-    - `cascade_subtasks`: If true, also deletes all subtasks
-    """
-    service.delete_task(task_id, user_id=DEFAULT_USER_ID, cascade_subtasks=cascade_subtasks)
-
-    return APIResponse(
-        success=True,
-        data={"id": task_id},
-        message="Task deleted successfully"
-    )
-
-
-@router.post("/{task_id}/complete", response_model=APIResponse[TaskResponse])
-async def complete_task(
-    task_id: int,
-    service: TaskServiceDep,
-    actual_duration: Optional[int] = Query(None, description="Actual time spent in minutes")
-):
-    """
-    Mark a task as completed with optional actual duration.
-
-    **Query Parameters:**
-    - `actual_duration`: Actual time spent on task in minutes
-    """
-    task = service.complete_task(task_id, user_id=DEFAULT_USER_ID, actual_duration=actual_duration)
-
-    return APIResponse(
-        success=True,
-        data=task,
-        message="Task marked as complete"
-    )
-
-
-@router.post("/nl-create", response_model=APIResponse[TaskResponse], status_code=status.HTTP_201_CREATED)
-async def create_task_from_natural_language(
-    nl_input: NaturalLanguageTaskCreate,
-    service: TaskServiceDep
-):
-    """
-    Create a task from natural language input using AI.
-
-    Uses Gemini AI to parse natural language and extract structured task information
-    including title, description, due date, priority, and tags.
-
-    **Example Request:**
-    ```json
-    {
-        "message": "Remind me to call John tomorrow at 2pm about the project budget",
-        "context": {"timezone": "America/New_York"}
-    }
-    ```
-
-    The AI will extract:
-    - Title: "Call John about the project budget"
-    - Due Date: Tomorrow at 2:00 PM
-    - Priority: Based on urgency keywords
-    - Tags: ["communication", "project", "budget"]
-    """
-    # Parse natural language using AI agent
-    parsed_task = await task_parser_agent.parse_natural_language_task(
-        nl_input.message,
-        user_context=nl_input.context
-    )
-
-    # Create task using service
-    task = service.create_task(parsed_task, user_id=DEFAULT_USER_ID)
-
-    return APIResponse(
-        success=True,
-        data=task,
-        message="Task created successfully from natural language"
     )
 
 
@@ -338,24 +260,167 @@ async def get_task_statistics(
     )
 
 
-@router.post("/{task_id}/breakdown", response_model=APIResponse[List[TaskResponse]])
-async def breakdown_task(
+@router.get("/insights/productivity", response_model=APIResponse[dict])
+async def get_productivity_insights(
+    service: TaskServiceDep
+):
+    """
+    Get AI-powered productivity insights based on task statistics.
+
+    Analyzes task patterns and provides actionable recommendations
+    to improve productivity.
+
+    **Response Example:**
+    ```json
+    {
+        "insights": ["Good completion rate: 75%", "3 overdue tasks"],
+        "recommendations": ["Review overdue tasks", "Consider time blocking"],
+        "productivity_score": 75
+    }
+    ```
+    """
+    stats = service.get_task_statistics(user_id=DEFAULT_USER_ID)
+
+    insights = await task_intelligence_agent.get_productivity_insights(stats)
+
+    return APIResponse(
+        success=True,
+        data=insights,
+        message="Insights generated successfully"
+    )
+
+
+@router.post("/{task_id}/schedule", response_model=APIResponse[dict])
+async def schedule_task(
     task_id: int,
     service: TaskServiceDep
 ):
     """
-    Break down a complex task into subtasks using AI.
+    Get AI suggestion for when to schedule this task.
+    """
+    task = service.get_task(task_id, user_id=DEFAULT_USER_ID)
+    
+    # In a real app, we'd fetch user's calendar/availability here
+    user_context = {"work_hours": "09:00-17:00", "timezone": "UTC"}
+    
+    schedule = await task_intelligence_agent.suggest_schedule(task, user_context)
+    
+    return APIResponse(
+        success=True,
+        data=schedule,
+        message="Scheduling suggestion generated"
+    )
 
-    Uses intelligent agent to suggest 3-7 subtasks based on the task description.
+
+@router.get("/{task_id}", response_model=APIResponse[TaskResponse])
+async def get_task(
+    task_id: int,
+    service: TaskServiceDep
+):
+    """
+    Get a specific task by ID with all relationships loaded.
+
+    Returns detailed information about a single task including subtasks and tags.
+    """
+    task = service.get_task(task_id, user_id=DEFAULT_USER_ID, load_relationships=True)
+
+    return APIResponse(
+        success=True,
+        data=task
+    )
+
+
+@router.put("/{task_id}", response_model=APIResponse[TaskResponse])
+async def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    service: TaskServiceDep
+):
+    """
+    Update an existing task with validation.
+
+    Updates only the provided fields, maintaining existing values for others.
+
+    **Example Request:**
+    ```json
+    {
+        "status": "in_progress",
+        "priority": "high"
+    }
+    ```
+    """
+    task = service.update_task(task_id, task_update, user_id=DEFAULT_USER_ID)
+
+    return APIResponse(
+        success=True,
+        data=task,
+        message="Task updated successfully"
+    )
+
+
+@router.delete("/{task_id}", response_model=APIResponse[dict])
+async def delete_task(
+    task_id: int,
+    service: TaskServiceDep,
+    cascade_subtasks: bool = Query(False, description="Delete subtasks as well")
+):
+    """
+    Delete a task with optional cascade to subtasks.
+
+    **Query Parameters:**
+    - `cascade_subtasks`: If true, also deletes all subtasks
+    """
+    service.delete_task(task_id, user_id=DEFAULT_USER_ID, cascade_subtasks=cascade_subtasks)
+
+    return APIResponse(
+        success=True,
+        data={"id": task_id},
+        message="Task deleted successfully"
+    )
+
+
+@router.post("/{task_id}/complete", response_model=APIResponse[TaskResponse])
+async def complete_task(
+    task_id: int,
+    service: TaskServiceDep,
+    actual_duration: Optional[int] = Query(None, description="Actual time spent in minutes")
+):
+    """
+    Mark a task as completed with optional actual duration.
+
+    **Query Parameters:**
+    - `actual_duration`: Actual time spent on task in minutes
+    """
+    task = service.complete_task(task_id, user_id=DEFAULT_USER_ID, actual_duration=actual_duration)
+
+    return APIResponse(
+        success=True,
+        data=task,
+        message="Task marked as complete"
+    )
+
+
+@router.post("/{task_id}/breakdown", response_model=APIResponse[List[TaskResponse]])
+async def breakdown_task(
+    task_id: int,
+    service: TaskServiceDep,
+    titles: Optional[List[str]] = None
+):
+    """
+    Break down a complex task into subtasks.
+    If titles are provided, uses those. Otherwise, uses AI to generate them.
     """
     # Get the task
     task = service.get_task(task_id, user_id=DEFAULT_USER_ID)
 
-    # Get AI suggestions for subtasks
-    subtask_titles = await task_intelligence_agent.suggest_task_breakdown(
-        task.title,
-        task.description or ""
-    )
+    if not titles:
+        # Get AI suggestions for subtasks
+        subtask_titles = await task_intelligence_agent.suggest_task_breakdown(
+            task.title,
+            task.description or ""
+        )
+    else:
+        subtask_titles = titles
 
     # Create subtasks
     subtasks = service.create_subtasks(
@@ -368,6 +433,28 @@ async def breakdown_task(
         success=True,
         data=subtasks,
         message=f"Created {len(subtasks)} subtasks"
+    )
+
+
+@router.get("/{task_id}/breakdown/suggest", response_model=APIResponse[List[str]])
+async def suggest_breakdown(
+    task_id: int,
+    service: TaskServiceDep
+):
+    """
+    Get AI suggestions for breaking down a task without creating them.
+    """
+    task = service.get_task(task_id, user_id=DEFAULT_USER_ID)
+    
+    subtask_titles = await task_intelligence_agent.suggest_task_breakdown(
+        task.title,
+        task.description or ""
+    )
+    
+    return APIResponse(
+        success=True,
+        data=subtask_titles,
+        message="Suggestions generated successfully"
     )
 
 
@@ -402,34 +489,4 @@ async def get_task_insights(
         success=True,
         data=insights,
         message="Insights generated successfully"
-    )
-
-
-@router.get("/insights/productivity", response_model=APIResponse[dict])
-async def get_productivity_insights(
-    service: TaskServiceDep
-):
-    """
-    Get AI-powered productivity insights based on task statistics.
-
-    Analyzes task patterns and provides actionable recommendations
-    to improve productivity.
-
-    **Response Example:**
-    ```json
-    {
-        "insights": ["Good completion rate: 75%", "3 overdue tasks"],
-        "recommendations": ["Review overdue tasks", "Consider time blocking"],
-        "productivity_score": 75
-    }
-    ```
-    """
-    stats = service.get_task_statistics(user_id=DEFAULT_USER_ID)
-
-    insights = await task_intelligence_agent.get_productivity_insights(stats)
-
-    return APIResponse(
-        success=True,
-        data=insights,
-        message="Productivity insights generated successfully"
     )

@@ -9,9 +9,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship, Column, JSON
+from app.models.links import TaskTagLink
 
 if TYPE_CHECKING:
-    from app.models.tag import Tag, TaskTagLink
+    from app.models.tag import Tag
+    from app.models.user import User
 
 
 class TaskStatus(str, Enum):
@@ -92,6 +94,7 @@ class Task(SQLModel, table=True):
     # }
 
     # Relationships
+    user: Optional["User"] = Relationship(back_populates="tasks")
     subtasks: List["Task"] = Relationship(
         back_populates="parent_task",
         sa_relationship_kwargs={"foreign_keys": "Task.parent_task_id"}
@@ -104,11 +107,11 @@ class Task(SQLModel, table=True):
         }
     )
 
-    # Many-to-Many with Tags (commented out temporarily to fix startup issue)
-    # tags: List["Tag"] = Relationship(
-    #     back_populates="tasks",
-    #     link_model="TaskTagLink"
-    # )
+    # Many-to-Many with Tags
+    tags: List["Tag"] = Relationship(
+        back_populates="tasks",
+        link_model=TaskTagLink
+    )
 
     def mark_complete(self) -> None:
         """Mark task as completed and set completion timestamp."""

@@ -22,7 +22,7 @@ class ConversationMessage(SQLModel, table=True):
         user_id: Foreign key to user
         role: Message sender role ('user' or 'assistant')
         content: Message text content
-        metadata: Additional message metadata (token count, model used, etc.)
+        message_metadata: Additional message metadata (token count, model used, etc.)
         created_at: Message timestamp
     """
 
@@ -39,8 +39,8 @@ class ConversationMessage(SQLModel, table=True):
     content: str = Field(max_length=5000)
 
     # Metadata
-    metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
-    # Example metadata:
+    message_metadata: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    # Example message_metadata:
     # {
     #   "token_count": 150,
     #   "model_used": "gemini-1.5-flash",
@@ -58,7 +58,7 @@ class ConversationMessage(SQLModel, table=True):
                 "user_id": 1,
                 "role": "user",
                 "content": "Remind me to call John tomorrow at 2pm",
-                "metadata": {
+                "message_metadata": {
                     "intent": "task_creation",
                     "extracted_entities": {
                         "action": "call John",

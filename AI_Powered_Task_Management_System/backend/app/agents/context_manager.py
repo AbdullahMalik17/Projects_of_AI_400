@@ -56,7 +56,7 @@ class ContextManager:
                 "role": message.role,
                 "content": message.content,
                 "timestamp": message.created_at,
-                "metadata": message.metadata
+                "metadata": message.message_metadata
             })
 
     def add_message(
@@ -91,7 +91,7 @@ class ContextManager:
                 user_id=self.user_id,
                 role=role,
                 content=content,
-                metadata=metadata or {}
+                message_metadata=metadata or {}
             )
             self.session.add(conversation_message)
             self.session.commit()
