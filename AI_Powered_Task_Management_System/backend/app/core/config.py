@@ -50,7 +50,15 @@ class Settings(BaseSettings):
 
     # AI/LLM Configuration
     GEMINI_API_KEY: str = Field(..., description="Google Gemini API key")
+    GEMINI_MODEL_NAME: str = "gemini-2.0-flash-exp"
     OPENAI_API_KEY: Optional[str] = None
+
+    # OpenAI Agent SDK Configuration (with LiteLLM for Gemini)
+    AGENT_MODEL: str = "litellm/gemini/gemini-2.0-flash-exp"
+    AGENT_TEMPERATURE: float = 0.3
+    AGENT_MAX_TOKENS: int = 2000
+
+    # Context and Conversation Settings
     MAX_CONVERSATION_HISTORY: int = 10
     CONTEXT_WINDOW_SIZE: int = 4000
     AI_TEMPERATURE: float = 0.7

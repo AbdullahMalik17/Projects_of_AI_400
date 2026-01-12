@@ -11,7 +11,9 @@ psycopg2-binary==2.9.9  # PostgreSQL adapter
 
 # AI/LLM Integration
 google-generativeai==0.3.2  # Gemini API
-openai==1.10.0  # OpenAI SDK for agents (optional alternative)
+openai==1.10.0  # OpenAI SDK
+openai-agents-sdk==0.2.9  # OpenAI Agents SDK
+litellm==1.52.0  # Multi-model support for agents
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
