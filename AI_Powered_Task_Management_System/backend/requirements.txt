@@ -7,13 +7,10 @@ pydantic-settings==2.1.0
 # Database
 sqlmodel==0.0.14
 alembic==1.13.1
-psycopg2-binary==2.9.9  # PostgreSQL adapter
+# psycopg2-binary==2.9.9  # PostgreSQL adapter (uncomment for production with PostgreSQL)
 
 # AI/LLM Integration
-google-generativeai==0.3.2  # Gemini API
-openai==1.10.0  # OpenAI SDK
-openai-agents-sdk==0.2.9  # OpenAI Agents SDK
-litellm==1.52.0  # Multi-model support for agents
+google-generativeai==0.3.2  # Gemini API for natural language processing
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0

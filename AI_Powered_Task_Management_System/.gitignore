@@ -21,7 +21,9 @@ wheels/
 .venv/
 venv/
 ENV/
-env/
+.env/
+.env 
+.env.local
 
 # Database
 *.db
@@ -61,3 +63,7 @@ next-env.d.ts
 # Misc
 *.pem
 .vercel
+
+# Claude and Serena
+.claude/
+.serena/
