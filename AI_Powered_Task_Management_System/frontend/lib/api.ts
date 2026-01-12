@@ -44,6 +44,18 @@ class ApiClient {
     return this.fetch<TaskListResponse>(`/tasks?${query.toString()}`);
   }
 
+  async searchTasks(query: string): Promise<Task[]> {
+    return this.fetch<Task[]>(`/tasks/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async getOverdueTasks(): Promise<Task[]> {
+    return this.fetch<Task[]>('/tasks/overdue');
+  }
+
+  async getUpcomingTasks(days: number = 7): Promise<Task[]> {
+    return this.fetch<Task[]>(`/tasks/upcoming?days=${days}`);
+  }
+
   async createTask(task: TaskCreate): Promise<Task> {
     return this.fetch<Task>('/tasks', {
       method: 'POST',
@@ -95,6 +107,10 @@ class ApiClient {
 
   async getTaskStatistics(): Promise<any> {
     return this.fetch<any>('/tasks/statistics');
+  }
+
+  async getProductivityInsights(): Promise<any> {
+    return this.fetch<any>('/tasks/insights/productivity');
   }
 
   async chatWithAgent(message: string): Promise<string> {

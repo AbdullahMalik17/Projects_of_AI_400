@@ -20,6 +20,7 @@ export interface Task {
   updated_at: string;
   completed_at?: string;
   user_id: number;
+  parent_task_id?: number | null;
   tags: Tag[];
   subtasks: Task[];
   task_metadata?: Record<string, any>;
